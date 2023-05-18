@@ -99,8 +99,8 @@ class FolderFilter(QWidget):
 
         parent_dir = os.path.basename(dir_path)
 
-        left_count = 0  # 符合条件的子文件夹数量
-        right_count = 0  # 不符合条件的子文件夹数量
+        left_count = 0  # 不含有此类文件的子文件夹数量
+        right_count = 0  # 含有此类文件的子文件夹数量
 
         for root, dirs, files in os.walk(dir_path):
             for dir_name in dirs:
@@ -125,7 +125,7 @@ class FolderFilter(QWidget):
                         item.setData(Qt.UserRole, os.path.join(parent_dir, sub_dir_path)) 
                         self.file_left_list.addItem(item)
                         left_count += 1
-                    else:
+                    if psd_exist:
                         item = QListWidgetItem()
                         # 给item设置数据，包括名称和HTML链接
                         item.setData(Qt.DisplayRole, dir_name)
@@ -147,19 +147,18 @@ class FolderFilter(QWidget):
                 
                         
 
-        def item_double_clicked(slot):
+        def item_double_clicked(list_widget):
             # 获取双击的item
-            item = self.file_left_list.currentItem()
-            item = self.file_right_list.currentItem()
-            # 获取文件夹路径
-            folder_path = item.data(Qt.UserRole)
-            # 打开文件夹
-            QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
-
+            item = list_widget.currentItem()
+            if item is not None:
+                # 获取文件夹路径
+                folder_path = item.data(Qt.UserRole)
+                # 打开文件夹
+                QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 
         # 连接双击事件到槽函数
-        self.file_left_list.itemDoubleClicked.connect(item_double_clicked)
-        self.file_right_list.itemDoubleClicked.connect(item_double_clicked)
+        self.file_left_list.itemDoubleClicked.connect(lambda: item_double_clicked(self.file_left_list))
+        self.file_right_list.itemDoubleClicked.connect(lambda: item_double_clicked(self.file_right_list))
             
 
     def reset(self):
