@@ -1,14 +1,16 @@
+from datetime import datetime
 import os
 import sys
-from tkinter.ttk import Progressbar
+from xmlrpc.client import _datetime, _datetime_type
 from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget, QFileDialog, QListWidget, QListWidgetItem
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget,QHBoxLayout
 from PyQt5.QtGui import QIcon,QColor,QDesktopServices
 from PyQt5.QtCore import QSettings,Qt, QUrl
 import urllib.parse
 from PyQt5.QtWidgets import QProgressBar
-from click import progressbar
-
+from click import DateTime, progressbar
+from PyQt5.QtWidgets import QComboBox, QFrame
+from PyQt5.QtGui import QTransform
 
 class FolderFilter(QWidget):
 
@@ -18,45 +20,87 @@ class FolderFilter(QWidget):
 
         #设置窗口图标
         self.setWindowIcon(QIcon('./icon.png'))
-
         # 设置界面
         self.setWindowTitle('FoldersFilter')
-        self.setGeometry(100, 100, 400, 400)
+        self.setFixedSize(400, 400)
         # 窗口默认居中
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
         x = int((screen.width() - size.width()) / 2)
         y = int((screen.height() - size.height()) / 2)
         self.move(x, y)
-
+        # 窗口随屏幕分辨率缩放
+        scale = min(screen.width() / 1920, screen.height() / 1080)
+        transform = QTransform()        
+        transform.scale(scale, scale)
+        self.transform = transform 
+        self.update()
+        #############创建组件   
         # 创建标签1
         self.folder_label = QLabel('待筛选的文件夹：')
-        self.folder_label.setStyleSheet('margin-top: 5px; margin-bottom: 10px;')
+        self.folder_label.setStyleSheet('color: #313131; margin-top: 5px; margin-bottom: 10px;')
 
         #创建按钮
-        button_width = 180
+        button_width = 190
         button_height = 30
-        button_style = 'background-color: white; color: #272727; border-radius: 10px; border: 1px solid #C5C5C5;'
+        button_style = 'color: #313131; background-color: white; color: #272727; border-radius: 10px; border: 1px solid #C5C5C5;'
         
         self.folder_button = QPushButton('选择文件夹', self)
         self.folder_button.setFixedSize(button_width, button_height)
         self.folder_button.setStyleSheet(button_style)
         self.folder_button.clicked.connect(self.select_folder)
 
-        self.reset_button = QPushButton('重置', self)
+        self.reset_button = QPushButton('清空列表', self)
         self.reset_button.setFixedSize(button_width, button_height)
         self.reset_button.setStyleSheet(button_style)
         self.reset_button.clicked.connect(self.reset)
 
-        #创建标签2
-        label_style_1 = 'margin-top: 10px; margin-bottom: 0px;'
-        label_style_2 = 'margin-top: 10px; margin-bottom: 0px; margin-left: 0px;color: #B6A338;'
+        #创建下拉框
+        combo_width = 75
+        combo_height = 30
+        combo_style_1 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:12px;} QComboBox::drop-down { image: none; } QComboBox::down-arrow { width: 0; height: 0; }'
+        combo_style_2 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:10px;} QComboBox::drop-down { image: none; } QComboBox::down-arrow { width: 0; height: 0; }'
 
-        self.folder_left_label = QLabel('不含.PSD文件')
+        self.filter_combo = QComboBox()#文件类型选择
+        self.filter_combo.setFixedSize(combo_width, combo_height)
+        self.filter_combo.setStyleSheet(combo_style_1)          
+        file_types = [".psd", ".txt", ".xlsx", ".py"] 
+        for file_type in file_types:
+            option = file_type 
+            self.filter_combo.addItem(file_type)
+        self.filter_combo.activated.connect(self.folders_filter)
+
+        self.sort_combo = QComboBox()#排序选择
+        self.sort_combo.setFixedSize(combo_width, combo_height)
+        self.sort_combo.setStyleSheet(combo_style_2)
+        sort_options = ["名称升序", "名称降序"]
+        for option in sort_options:
+            self.sort_combo.addItem(option)
+        self.sort_combo.activated.connect(self.folders_sort)
+
+        #创建标签2
+        label_style_3 = 'color: #313131; margin-top: 10px; margin-bottom: 0px; margin-left: 0px;'
+
+        self.folder_type_label = QLabel('文件类型：')
+        self.folder_type_label.setStyleSheet(label_style_3)     
+        self.folder_sort_label = QLabel('排序方式：')
+        self.folder_sort_label.setStyleSheet(label_style_3)
+
+        #创建分隔线
+        self.hline = QFrame(self)
+        self.hline.setFrameShape(QFrame.HLine)
+        self.hline.setFrameShadow(QFrame.Sunken)
+        self.hline.setGeometry(0, 125, self.width(), 2)
+
+        #创建标签3
+        label_style_1 = 'color: #313131; margin-top: 25px; margin-bottom: 0px;'
+        label_style_2 = 'color: #313131; margin-top: 25px; margin-bottom: 0px; margin-left: 0px;color: #B6A338;'
+
+        self.folder_left_label = QLabel('不含')
         self.folder_left_label.setStyleSheet(label_style_1)
         self.folder_left_num_label = QLabel()
         self.folder_left_num_label.setStyleSheet(label_style_2)       
-        self.folder_right_label = QLabel('含有.PSD文件')
+        self.folder_right_label = QLabel('含有')
         self.folder_right_label.setStyleSheet(label_style_1)
         self.folder_right_num_label = QLabel()
         self.folder_right_num_label.setStyleSheet(label_style_2)
@@ -78,12 +122,13 @@ class FolderFilter(QWidget):
         self.progress_bar.setStyleSheet("QProgressBar {color: transparent;border: 1px solid #F0F0F0 ;border-radius: 4px;text-align: center;} QProgressBar::chunk {background-color: #51B163;border-radius: 2px;}")
         self.progress_bar.setFixedHeight(10) # 设置进度条的高度
 
-        #创建水平布局管理器
+        ###############创建水平布局管理器
         hbox1 = QHBoxLayout()
         hbox2 = QHBoxLayout()
         hbox3 = QHBoxLayout()
+        hbox4 = QHBoxLayout()
 
-        # 添加重置按钮和文件夹按钮到水平布局管理器中
+        # 添加组件水平布局管理器中
         hbox1.addWidget(self.folder_button)
         hbox1.addWidget(self.reset_button)
         hbox2.addWidget(self.file_left_list)
@@ -92,22 +137,52 @@ class FolderFilter(QWidget):
         hbox3.addWidget(self.folder_left_num_label)
         hbox3.addWidget(self.folder_right_label)
         hbox3.addWidget(self.folder_right_num_label)
-
-        # 将组件添加到主窗口中
+        hbox4.addSpacing(0) # 添加（）像素的空白占位
+        hbox4.addWidget(self.folder_type_label)
+        hbox4.addWidget(self.filter_combo)
+        hbox4.addSpacing(35) # 添加（）像素的空白占位
+        hbox4.addWidget(self.folder_sort_label)
+        hbox4.addWidget(self.sort_combo)
+        hbox4.addSpacing(35) # 添加（）像素的空白占位
+        
+        ############将组件添加到主窗口中
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.folder_label)
         main_layout.addLayout(hbox1)
+        main_layout.addLayout(hbox4)
         main_layout.addLayout(hbox3)
         main_layout.addLayout(hbox2)
         main_layout.addWidget(self.progress_bar)        
         self.setLayout(main_layout)
 
-    #主程序
-    def select_folder(self):    
-        # 弹出文件夹选择框
-        self.settings = QSettings("MyCompany", "MyApp")
-        self.progress_bar.setValue(0)
+        #设置默认文件类型
+        self.settings = QSettings("lemon-o", "FoldersFilter")
+        
+        last_selected_left = self.settings.value("last_selected_left", 0, int)
+        self.filter_combo.setCurrentIndex(last_selected_left) 
+        self.filter_combo.currentIndexChanged.connect(lambda index: self.settings.setValue("last_selected_left", index) )
+        #设置默认排序方式
+        last_selected_right = self.settings.value("last_selected_right", 0, int)
+        self.sort_combo.setCurrentIndex(last_selected_right) 
+        self.sort_combo.currentIndexChanged.connect(lambda index: self.settings.setValue("last_selected_right", index) )       
+        #初始化路径
+        self.parent_dir = None
+        self.dir_path = None 
+    #设置分隔线   
+    def resizeEvent(self, event):
+        # 获取新的窗口宽度
+        new_width = event.size().width()
+        # 将水平分隔线宽度设置为新的窗口宽度
+        self.hline.setGeometry(0, 125, new_width, 2)
 
+    #############主程序
+    #选择文件夹
+    def select_folder(self): 
+        # 弹出文件夹选择框
+        self.settings = QSettings("lemon-o", "FoldersFilter")
+        #设置进度条为初始状态
+        self.progress_bar.setValue(0)
+        #设置默认文件夹路径      
         last_dir_path = self.settings.value("last_dir_path", ".")
         if not last_dir_path:  # 如果还没有保存过选择的文件夹路径，则使用当前目录作为默认路径
             last_dir_path = "."
@@ -117,18 +192,27 @@ class FolderFilter(QWidget):
             return  # 如果未选择文件夹则直接返回
         else:
             self.settings.setValue("last_dir_path", dir_path)
-
         # 设置已选择的文件夹路径
-        self.folder_label.setText('待筛选的文件夹：{}'.format(dir_path))
+        self.folder_label.setText('待筛选的文件夹：{}'.format(dir_path))   
+        self.parent_dir = os.path.basename(dir_path)
+        self.dir_path = dir_path
+
+        self.folders_filter()  
             
-        parent_dir = os.path.basename(dir_path) 
+    # 文件类型筛选      
+    def folders_filter(self):
+        #获取选择的文件类型
+        file_type = self.filter_combo.currentText()
+        if not self.parent_dir or not self.dir_path:
+            return
+
         left_count = 0  # 不含有此类文件的子文件夹数量
         right_count = 0  # 含有此类文件的子文件夹数量
         # 统计文件夹数量
-        total_count = len([name for name in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, name))])
+        total_count = len([name for name in os.listdir(self.dir_path) if os.path.isdir(os.path.join(self.dir_path, name))])
         processed_count = 0
 
-        for root, dirs, files in os.walk(dir_path):
+        for root, dirs, files in os.walk(self.dir_path):
             # 处理不可访问的目录
             if not os.access(root, os.R_OK):
                 continue
@@ -137,34 +221,47 @@ class FolderFilter(QWidget):
                 # 子文件夹的路径
                 sub_dir_path = os.path.join(root, dir_name)
                 # 如果该子文件夹是目录A的一级子文件夹，则添加到控件中
-                if os.path.dirname(sub_dir_path) == dir_path:
-                    # 检查子文件夹及其所有子文件夹中是否存在.psd文件
-                    psd_exist = False
+                if os.path.dirname(sub_dir_path) == self.dir_path:
+                    # 检查子文件夹及其所有子文件夹中是否存在.file_type文件
+                    file_type_exist = False
                     for sub_root, sub_dirs, sub_files in os.walk(sub_dir_path):
-                        if any(f.endswith('.psd') for f in sub_files):
-                            psd_exist = True
+                        if any(f.endswith(file_type) for f in sub_files):
+                            file_type_exist = True
                             break
 
-                    if not psd_exist:
+                    if not file_type_exist:
                         # 创建一个QListWidgetItem对象
                         item = QListWidgetItem()
                         # 给item设置数据，包括名称和HTML链接
                         item.setData(Qt.DisplayRole, dir_name)
                         item.setData(Qt.TextColorRole, QColor("#2F857E")) # 设置链接的颜色
                         item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
-                        item.setData(Qt.UserRole, os.path.join(parent_dir, sub_dir_path)) 
+                        item.setData(Qt.UserRole, os.path.join(self.parent_dir, sub_dir_path)) 
                         self.file_left_list.addItem(item)
                         left_count += 1
 
-                    if psd_exist:
+                    if file_type_exist:
                         item = QListWidgetItem()
                         # 给item设置数据，包括名称和HTML链接
                         item.setData(Qt.DisplayRole, dir_name)
                         item.setData(Qt.TextColorRole, QColor("#39569E")) # 设置链接的颜色
                         item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
-                        item.setData(Qt.UserRole, os.path.join(parent_dir, sub_dir_path))
+                        item.setData(Qt.UserRole, os.path.join(self.parent_dir, sub_dir_path))
                         self.file_right_list.addItem(item)
                         right_count += 1
+                    
+                    option = self.sort_combo.currentText()
+                        
+                    if option == "名称升序":
+                        self.file_right_list.sortItems()
+                        self.file_left_list.sortItems()
+                            
+                    elif option == "名称降序":
+                        self.file_right_list.sortItems(Qt.DescendingOrder)
+                        self.file_left_list.sortItems(Qt.DescendingOrder)
+                            
+                    self.file_right_list.update()
+                    self.file_left_list.update()                     
                     
                     self.folder_left_num_label.setText(f"总计：{self.file_left_list.count()}")
                     self.folder_right_num_label.setText(f"总计：{self.file_right_list.count()}")
@@ -172,7 +269,7 @@ class FolderFilter(QWidget):
                 processed_count += 1
                 progress_percent = int(processed_count / total_count * 100)
                 self.progress_bar.setValue(progress_percent)
-                           
+                        
         # 根据符合条件和不符合条件的子文件夹数量，弹出对应的提示框
         if left_count > 0 and right_count > 0:
             QMessageBox.information(self, "提示", "筛选完成，有{}个文件夹不含此类文件，有{}个文件夹含有此类文件。".format(left_count, right_count))
@@ -182,7 +279,7 @@ class FolderFilter(QWidget):
             QMessageBox.information(self, "提示", "筛选完成，有{}个文件夹含有此类文件。".format(right_count))
         else:
             QMessageBox.information(self, "提示", "没有符合条件的文件夹。")
-                
+            
 
         def item_double_clicked(list_widget):
             # 获取双击的item
@@ -198,10 +295,24 @@ class FolderFilter(QWidget):
         # 连接双击事件到槽函数
         self.file_left_list.itemDoubleClicked.connect(lambda: item_double_clicked(self.file_left_list))
         self.file_right_list.itemDoubleClicked.connect(lambda: item_double_clicked(self.file_right_list))       
-
+    
+    # 进行排序      
+    def folders_sort(self):
+        option = self.sort_combo.currentText()
+            
+        if option == "名称升序":
+            self.file_right_list.sortItems()
+            self.file_left_list.sortItems()
+                
+        elif option == "名称降序":
+            self.file_right_list.sortItems(Qt.DescendingOrder)
+            self.file_left_list.sortItems(Qt.DescendingOrder)
+                
+        self.file_right_list.update()
+        self.file_left_list.update()       
+        
     #重置按钮配置
     def reset(self):
-        self.folder_label.setText('待筛选的文件夹：')
         self.file_left_list.clear()
         self.file_right_list.clear()
         self.folder_left_num_label.clear()
