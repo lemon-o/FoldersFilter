@@ -22,19 +22,14 @@ class FolderFilter(QWidget):
         self.setWindowIcon(QIcon('./icon.png'))
         # 设置界面
         self.setWindowTitle('FoldersFilter')
-        self.setFixedSize(400, 400)
+        self.setGeometry(100, 100, 400, 400)
         # 窗口默认居中
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
         x = int((screen.width() - size.width()) / 2)
         y = int((screen.height() - size.height()) / 2)
         self.move(x, y)
-        # 窗口随屏幕分辨率缩放
-        scale = min(screen.width() / 1920, screen.height() / 1080)
-        transform = QTransform()        
-        transform.scale(scale, scale)
-        self.transform = transform 
-        self.update()
+
         #############创建组件   
         # 创建标签1
         self.folder_label = QLabel('待筛选的文件夹：')
@@ -58,22 +53,20 @@ class FolderFilter(QWidget):
         #创建下拉框
         combo_width = 75
         combo_height = 30
-        combo_style_1 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:12px;} QComboBox::drop-down { image: none; } QComboBox::down-arrow { width: 0; height: 0; }'
-        combo_style_2 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:10px;} QComboBox::drop-down { image: none; } QComboBox::down-arrow { width: 0; height: 0; }'
+        combo_style_1 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:12px;} QComboBox::drop-down {  background-color: #C5C5C5; border: none; }'        
+        combo_style_2 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:12px;} QComboBox::drop-down {  background-color: #C5C5C5; border: none; }'                
 
-        self.filter_combo = QComboBox()#文件类型选择
+        self.filter_combo = QComboBox() # 文件类型选择
         self.filter_combo.setFixedSize(combo_width, combo_height)
-        self.filter_combo.setStyleSheet(combo_style_1)          
-        file_types = [".psd", ".txt", ".xlsx", ".py"] 
-        for file_type in file_types:
-            option = file_type 
-            self.filter_combo.addItem(file_type)
-        self.filter_combo.activated.connect(self.folders_filter)
-
+        self.filter_combo.setStyleSheet(combo_style_1)
+        self.filter_combo.setEditable(True)
+        self.file_type = []
+        self.filter_combo.activated.connect(self.select_folder)
+        
         self.sort_combo = QComboBox()#排序选择
         self.sort_combo.setFixedSize(combo_width, combo_height)
         self.sort_combo.setStyleSheet(combo_style_2)
-        sort_options = ["名称升序", "名称降序"]
+        sort_options = ["升序", "降序"]
         for option in sort_options:
             self.sort_combo.addItem(option)
         self.sort_combo.activated.connect(self.folders_sort)
@@ -158,54 +151,60 @@ class FolderFilter(QWidget):
         #设置默认文件类型
         self.settings = QSettings("lemon-o", "FoldersFilter")
         
-        last_selected_left = self.settings.value("last_selected_left", 0, int)
-        self.filter_combo.setCurrentIndex(last_selected_left) 
-        self.filter_combo.currentIndexChanged.connect(lambda index: self.settings.setValue("last_selected_left", index) )
+        last_input_left = self.settings.value("last_input_left", "", str)
+        self.filter_combo.setEditText(last_input_left) 
+        self.filter_combo.lineEdit().textChanged.connect(lambda text: self.settings.setValue("last_input_left", text))
         #设置默认排序方式
         last_selected_right = self.settings.value("last_selected_right", 0, int)
         self.sort_combo.setCurrentIndex(last_selected_right) 
         self.sort_combo.currentIndexChanged.connect(lambda index: self.settings.setValue("last_selected_right", index) )       
-        #初始化路径
+        #初始化变量
         self.parent_dir = None
-        self.dir_path = None 
+        self.dir_path = None
+        self.file_type = ""
+
     #设置分隔线   
     def resizeEvent(self, event):
         # 获取新的窗口宽度
         new_width = event.size().width()
         # 将水平分隔线宽度设置为新的窗口宽度
         self.hline.setGeometry(0, 125, new_width, 2)
-
+            
     #############主程序
     #选择文件夹
-    def select_folder(self): 
-        # 弹出文件夹选择框
-        self.settings = QSettings("lemon-o", "FoldersFilter")
-        #设置进度条为初始状态
-        self.progress_bar.setValue(0)
-        #设置默认文件夹路径      
-        last_dir_path = self.settings.value("last_dir_path", ".")
-        if not last_dir_path:  # 如果还没有保存过选择的文件夹路径，则使用当前目录作为默认路径
-            last_dir_path = "."
-        dir_path = str(QFileDialog.getExistingDirectory(self, '选择文件夹', last_dir_path)) 
-        if not dir_path:
-            QMessageBox.warning(self, '提示', '请选择要筛选的文件夹')
-            return  # 如果未选择文件夹则直接返回
+    def select_folder(self):
+        # 获取用户输入的文件类型
+        file_type = self.filter_combo.currentText()        
+        if not file_type:
+            QMessageBox.warning(self,'提示','请输入要筛选的文件类型\n例如：“.txt”')
+            return
         else:
-            self.settings.setValue("last_dir_path", dir_path)
-        # 设置已选择的文件夹路径
-        self.folder_label.setText('待筛选的文件夹：{}'.format(dir_path))   
-        self.parent_dir = os.path.basename(dir_path)
-        self.dir_path = dir_path
+            self.settings = QSettings("lemon-o", "FoldersFilter")
+            #设置进度条为初始状态
+            self.progress_bar.setValue(0)
+            #设置默认文件夹路径      
+            last_dir_path = self.settings.value("last_dir_path", ".")
+            if not last_dir_path:  # 如果还没有保存过选择的文件夹路径，则使用当前目录作为默认路径
+                last_dir_path = "."
+            dir_path = str(QFileDialog.getExistingDirectory(self, '选择文件夹', last_dir_path)) 
+            if not dir_path:
+                QMessageBox.warning(self, '提示', '未选择文件夹')
+                return  # 如果未选择文件夹则直接返回
+            else:
+                self.settings.setValue("last_dir_path", dir_path)
+            # 设置已选择的文件夹路径
+            self.folder_label.setText('待筛选的文件夹：{}'.format(dir_path))   
+            self.parent_dir = os.path.basename(dir_path)
+            self.dir_path = dir_path
 
-        self.folders_filter()  
-            
-    # 文件类型筛选      
+            self.folders_filter()
+  
+        # 文件类型筛选      
     def folders_filter(self):
-        #获取选择的文件类型
-        file_type = self.filter_combo.currentText()
         if not self.parent_dir or not self.dir_path:
             return
-
+        #获取选择的文件类型
+        file_type = self.filter_combo.currentText()
         left_count = 0  # 不含有此类文件的子文件夹数量
         right_count = 0  # 含有此类文件的子文件夹数量
         # 统计文件夹数量
@@ -252,11 +251,11 @@ class FolderFilter(QWidget):
                     
                     option = self.sort_combo.currentText()
                         
-                    if option == "名称升序":
+                    if option == "升序":
                         self.file_right_list.sortItems()
                         self.file_left_list.sortItems()
                             
-                    elif option == "名称降序":
+                    elif option == "降序":
                         self.file_right_list.sortItems(Qt.DescendingOrder)
                         self.file_left_list.sortItems(Qt.DescendingOrder)
                             
@@ -297,19 +296,20 @@ class FolderFilter(QWidget):
         self.file_right_list.itemDoubleClicked.connect(lambda: item_double_clicked(self.file_right_list))       
     
     # 进行排序      
-    def folders_sort(self):
+    def folders_sort(self):  
         option = self.sort_combo.currentText()
-            
-        if option == "名称升序":
+                
+        if option == "升序":
             self.file_right_list.sortItems()
             self.file_left_list.sortItems()
                 
-        elif option == "名称降序":
-            self.file_right_list.sortItems(Qt.DescendingOrder)
+        elif option == "降序":
+            self.file_right_list.sortItems(Qt.DescendingOrder) 
             self.file_left_list.sortItems(Qt.DescendingOrder)
                 
         self.file_right_list.update()
         self.file_left_list.update()       
+             
         
     #重置按钮配置
     def reset(self):
