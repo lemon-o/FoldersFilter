@@ -1,16 +1,13 @@
-from datetime import datetime
 import os
 import sys
-from xmlrpc.client import _datetime, _datetime_type
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget, QFileDialog, QListWidget, QListWidgetItem
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget,QHBoxLayout
 from PyQt5.QtGui import QIcon,QColor,QDesktopServices
 from PyQt5.QtCore import QSettings,Qt, QUrl
 import urllib.parse
 from PyQt5.QtWidgets import QProgressBar
-from click import DateTime, progressbar
 from PyQt5.QtWidgets import QComboBox, QFrame
-from PyQt5.QtGui import QTransform
 
 class FolderFilter(QWidget):
 
@@ -22,7 +19,12 @@ class FolderFilter(QWidget):
         self.setWindowIcon(QIcon('./icon.png'))
         # 设置界面
         self.setWindowTitle('FoldersFilter')
-        self.setGeometry(100, 100, 400, 400)
+        self.setMinimumSize(400, 400) # 设置最小大小
+        self.setMaximumSize(800, 800) # 设置最大大小
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding) # 设置大小策略
+        # 将窗口的大小设置为最小大小
+        self.resize(400, 400)
+       
         # 窗口默认居中
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
@@ -36,19 +38,26 @@ class FolderFilter(QWidget):
         self.folder_label.setStyleSheet('color: #313131; margin-top: 5px; margin-bottom: 10px;')
 
         #创建按钮
-        button_width = 190
-        button_height = 30
+        button_width1 = 180
+        button_height1 = 30
+        button_width2 = 90
+        button_height2 = 30
         button_style = 'color: #313131; background-color: white; color: #272727; border-radius: 10px; border: 1px solid #C5C5C5;'
         
         self.folder_button = QPushButton('选择文件夹', self)
-        self.folder_button.setFixedSize(button_width, button_height)
+        self.folder_button.setFixedSize(button_width1, button_height1)
         self.folder_button.setStyleSheet(button_style)
         self.folder_button.clicked.connect(self.select_folder)
 
         self.reset_button = QPushButton('清空列表', self)
-        self.reset_button.setFixedSize(button_width, button_height)
+        self.reset_button.setFixedSize(button_width2, button_height2)
         self.reset_button.setStyleSheet(button_style)
         self.reset_button.clicked.connect(self.reset)
+
+        self.refresh_button = QPushButton('刷新列表', self)
+        self.refresh_button.setFixedSize(button_width2, button_height2)
+        self.refresh_button.setStyleSheet(button_style)
+        self.refresh_button.clicked.connect(self.refresh)
 
         #创建下拉框
         combo_width = 75
@@ -62,6 +71,7 @@ class FolderFilter(QWidget):
         self.filter_combo.setEditable(True)
         self.file_type = []
         self.filter_combo.activated.connect(self.select_folder)
+        self.filter_combo.activated.connect(self.refresh)
         
         self.sort_combo = QComboBox()#排序选择
         self.sort_combo.setFixedSize(combo_width, combo_height)
@@ -124,6 +134,7 @@ class FolderFilter(QWidget):
         # 添加组件水平布局管理器中
         hbox1.addWidget(self.folder_button)
         hbox1.addWidget(self.reset_button)
+        hbox1.addWidget(self.refresh_button)
         hbox2.addWidget(self.file_left_list)
         hbox2.addWidget(self.file_right_list)
         hbox3.addWidget(self.folder_left_label)
@@ -162,6 +173,7 @@ class FolderFilter(QWidget):
         self.parent_dir = None
         self.dir_path = None
         self.file_type = ""
+        self.refresh_flag = False 
 
     #设置分隔线   
     def resizeEvent(self, event):
@@ -268,16 +280,21 @@ class FolderFilter(QWidget):
                 processed_count += 1
                 progress_percent = int(processed_count / total_count * 100)
                 self.progress_bar.setValue(progress_percent)
-                        
-        # 根据符合条件和不符合条件的子文件夹数量，弹出对应的提示框
-        if left_count > 0 and right_count > 0:
-            QMessageBox.information(self, "提示", "筛选完成，有{}个文件夹不含此类文件，有{}个文件夹含有此类文件。".format(left_count, right_count))
-        elif left_count > 0:
-            QMessageBox.information(self, "提示", "筛选完成，有{}个文件夹不含此类文件。".format(left_count))
-        elif right_count > 0:
-            QMessageBox.information(self, "提示", "筛选完成，有{}个文件夹含有此类文件。".format(right_count))
-        else:
-            QMessageBox.information(self, "提示", "没有符合条件的文件夹。")
+
+        # 如果点击刷新按钮refresh_flag为True,则不显示任何提示
+        if self.refresh_flag:
+            self.refresh_flag = False
+            QMessageBox.information(self, "提示","列表已成功刷新!")
+        else:                          
+            # 根据符合条件和不符合条件的子文件夹数量，弹出对应的提示框
+            if left_count > 0 and right_count > 0:
+                QMessageBox.information(self, "提示", "筛选完成！有{}个文件夹不含此类文件，有{}个文件夹含有此类文件。".format(left_count, right_count))
+            elif left_count > 0:
+                QMessageBox.information(self, "提示", "筛选完成！有{}个文件夹不含此类文件。".format(left_count))
+            elif right_count > 0:
+                QMessageBox.information(self, "提示", "筛选完成！有{}个文件夹含有此类文件。".format(right_count))
+            else:
+                QMessageBox.information(self, "提示", "没有符合条件的文件夹。")
             
 
         def item_double_clicked(list_widget):
@@ -318,6 +335,18 @@ class FolderFilter(QWidget):
         self.folder_left_num_label.clear()
         self.folder_right_num_label.clear()
         self.progress_bar.setValue(0)
+
+    #刷新按钮配置
+    def refresh(self):
+
+        self.file_left_list.clear()
+        self.file_right_list.clear()
+        self.folder_left_num_label.clear()
+        self.folder_right_num_label.clear()
+
+        #设置刷新标记,进入folders_filter()函数后立刻复位    
+        self.refresh_flag = True 
+        self.folders_filter()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
