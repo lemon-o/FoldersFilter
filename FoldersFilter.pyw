@@ -1,6 +1,8 @@
 import os
 import sys
 from PyQt5 import QtWidgets
+from PyQt5 import QtCore
+from PyQt5.QtCore import QSettings
 from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget, QFileDialog, QListWidget, QListWidgetItem
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget,QHBoxLayout
 from PyQt5.QtGui import QIcon,QColor,QDesktopServices
@@ -19,11 +21,11 @@ class FolderFilter(QWidget):
         self.setWindowIcon(QIcon('./icon.png'))
         # 设置界面
         self.setWindowTitle('FoldersFilter')
-        self.setMinimumSize(400, 400) # 设置最小大小
-        self.setMaximumSize(800, 800) # 设置最大大小
+        self.setMinimumSize(512, 512) # 设置最小大小
+        self.setMaximumSize(1080, 1080) # 设置最大大小
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding) # 设置大小策略
         # 将窗口的大小设置为最小大小
-        self.resize(400, 400)
+        #self.resize(400, 400)
        
         # 窗口默认居中
         screen = QDesktopWidget().screenGeometry()
@@ -159,16 +161,18 @@ class FolderFilter(QWidget):
         main_layout.addWidget(self.progress_bar)        
         self.setLayout(main_layout)
 
-        #设置默认文件类型
+        ###########设置默认项
         self.settings = QSettings("lemon-o", "FoldersFilter")
-        
+        #设置默认文件类型
         last_input_left = self.settings.value("last_input_left", "", str)
         self.filter_combo.setEditText(last_input_left) 
         self.filter_combo.lineEdit().textChanged.connect(lambda text: self.settings.setValue("last_input_left", text))
         #设置默认排序方式
         last_selected_right = self.settings.value("last_selected_right", 0, int)
         self.sort_combo.setCurrentIndex(last_selected_right) 
-        self.sort_combo.currentIndexChanged.connect(lambda index: self.settings.setValue("last_selected_right", index) )       
+        self.sort_combo.currentIndexChanged.connect(lambda index: self.settings.setValue("last_selected_right", index) )
+        #设置默认窗口大小
+        self.load_window_size()       
         #初始化变量
         self.parent_dir = None
         self.dir_path = None
@@ -241,6 +245,10 @@ class FolderFilter(QWidget):
                             break
 
                     if not file_type_exist:
+                        if os.path.exists(os.path.join(self.parent_dir, sub_dir_path, "待修")):
+                            sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path, "待修"))
+                            if not any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
+                                dir_name = "未选图 " + dir_name        
                         # 创建一个QListWidgetItem对象
                         item = QListWidgetItem()
                         # 给item设置数据，包括名称和HTML链接
@@ -347,6 +355,15 @@ class FolderFilter(QWidget):
         #设置刷新标记,进入folders_filter()函数后立刻复位    
         self.refresh_flag = True 
         self.folders_filter()
+
+    #加载窗口大小
+    def load_window_size(self):
+        window_size = self.settings.value('window_size', QtCore.QSize(512, 512))
+        self.resize(window_size)
+    #记录窗口关闭事件
+    def closeEvent(self, event):
+        self.settings.setValue('window_size', self.size())
+        super().closeEvent(event)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
