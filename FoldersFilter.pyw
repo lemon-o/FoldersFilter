@@ -374,6 +374,10 @@ class FolderFilter(QWidget):
             if self.file_left_list.count() == 0 or self.file_right_list.count() == 0:
                 QMessageBox.information(self,'提示','请先选择文件夹')
                 return
+        elif self.parent_dir or self.dir_path:
+            if self.file_left_list.count() == 0 and self.file_right_list.count() == 0:
+                QMessageBox.information(self,'提示','列表中没有内容')
+                return           
         self.file_left_list.clear()
         self.file_right_list.clear()
         self.folder_left_num_label.clear()
