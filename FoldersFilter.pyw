@@ -10,6 +10,7 @@ from PyQt5.QtCore import QSettings,Qt, QUrl
 import urllib.parse
 from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QComboBox, QFrame
+from PIL import Image
 
 class FolderFilter(QWidget):
 
@@ -24,8 +25,6 @@ class FolderFilter(QWidget):
         self.setMinimumSize(512, 512) # 设置最小大小
         self.setMaximumSize(1080, 1080) # 设置最大大小
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding) # 设置大小策略
-        # 将窗口的大小设置为最小大小
-        #self.resize(400, 400)
        
         # 窗口默认居中
         screen = QDesktopWidget().screenGeometry()
@@ -44,8 +43,21 @@ class FolderFilter(QWidget):
         button_height1 = 30
         button_width2 = 90
         button_height2 = 30
-        button_style = 'color: #313131; background-color: white; color: #272727; border-radius: 10px; border: 1px solid #C5C5C5;'
-        
+        #button_style = 'color: #313131; background-color: white; color: #272727; border-radius: 10px; border: 1px solid #C5C5C5;'
+        button_style = """
+        QPushButton {
+            background-color: white;
+            color: #313131;
+            border-radius: 10px;
+            border: 1px solid #C5C5C5;
+        }
+
+        QPushButton:hover {
+            background-color: #CAE5DD;
+            border: 1px solid #379B7E;
+        }
+        """
+
         self.folder_button = QPushButton('选择文件夹', self)
         self.folder_button.setFixedSize(button_width1, button_height1)
         self.folder_button.setStyleSheet(button_style)
@@ -189,6 +201,18 @@ class FolderFilter(QWidget):
     #############主程序
     #选择文件夹
     def select_folder(self):
+        if self.file_left_list.count() > 0 or self.file_right_list.count() > 0:
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("提示")
+            msg_box.setText("未清空列表会使筛选结果叠加，是否继续？")
+            yes_button = msg_box.addButton("继续", QMessageBox.YesRole)
+            cancel_button = msg_box.addButton("取消", QMessageBox.NoRole)
+            msg_box.setDefaultButton(cancel_button)
+            msg_box.exec_()
+            if msg_box.clickedButton() == cancel_button:
+                return
+
         # 获取用户输入的文件类型
         file_type = self.filter_combo.currentText()        
         if not file_type:
@@ -248,7 +272,16 @@ class FolderFilter(QWidget):
                         if os.path.exists(os.path.join(self.parent_dir, sub_dir_path, "待修")):
                             sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path, "待修"))
                             if not any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
-                                dir_name = "未选图 " + dir_name        
+                                dir_name = "未选图 " + dir_name
+                        elif os.path.exists(os.path.join(self.parent_dir, sub_dir_path)):
+                            sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
+                            for file in sub_dir_files:
+                                if file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')):
+                                    file_path = os.path.join(self.parent_dir, sub_dir_path, file)
+                                    with Image.open(file_path) as img:
+                                        if img.size == (3200, 4800) or img.size == (4800, 3200):
+                                            dir_name = "未选图 " + dir_name
+                                            break
                         # 创建一个QListWidgetItem对象
                         item = QListWidgetItem()
                         # 给item设置数据，包括名称和HTML链接
