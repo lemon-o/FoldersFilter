@@ -85,7 +85,6 @@ class FolderFilter(QWidget):
         self.filter_combo.setEditable(True)
         self.file_type = []
         self.filter_combo.activated.connect(self.select_folder)
-        self.filter_combo.activated.connect(self.refresh)
         
         self.sort_combo = QComboBox()#排序选择
         self.sort_combo.setFixedSize(combo_width, combo_height)
@@ -203,7 +202,7 @@ class FolderFilter(QWidget):
     def select_folder(self):
         if self.file_left_list.count() > 0 or self.file_right_list.count() > 0:
             msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setIcon(QMessageBox.Information) 
             msg_box.setWindowTitle("提示")
             msg_box.setText("未清空列表会使筛选结果叠加，是否继续？")
             yes_button = msg_box.addButton("继续", QMessageBox.YesRole)
@@ -216,7 +215,7 @@ class FolderFilter(QWidget):
         # 获取用户输入的文件类型
         file_type = self.filter_combo.currentText()        
         if not file_type:
-            QMessageBox.warning(self,'提示','请输入要筛选的文件类型\n例如：“.txt”')
+            QMessageBox.information(self,'提示','请输入要筛选的文件类型\n例如：“.txt”')
             return
         else:
             self.settings = QSettings("lemon-o", "FoldersFilter")
@@ -228,7 +227,7 @@ class FolderFilter(QWidget):
                 last_dir_path = "."
             dir_path = str(QFileDialog.getExistingDirectory(self, '选择文件夹', last_dir_path)) 
             if not dir_path:
-                QMessageBox.warning(self, '提示', '未选择文件夹')
+                QMessageBox.information(self, '提示', '未选择文件夹')
                 return  # 如果未选择文件夹则直接返回
             else:
                 self.settings.setValue("last_dir_path", dir_path)
@@ -371,6 +370,10 @@ class FolderFilter(QWidget):
         
     #重置按钮配置
     def reset(self):
+        if not self.parent_dir or not self.dir_path:
+            if self.file_left_list.count() == 0 or self.file_right_list.count() == 0:
+                QMessageBox.information(self,'提示','请先选择文件夹')
+                return
         self.file_left_list.clear()
         self.file_right_list.clear()
         self.folder_left_num_label.clear()
@@ -379,7 +382,10 @@ class FolderFilter(QWidget):
 
     #刷新按钮配置
     def refresh(self):
-
+        if not self.parent_dir or not self.dir_path:
+            if self.file_left_list.count() == 0 or self.file_right_list.count() == 0:
+                QMessageBox.information(self,'提示','请先选择文件夹')
+                return
         self.file_left_list.clear()
         self.file_right_list.clear()
         self.folder_left_num_label.clear()
