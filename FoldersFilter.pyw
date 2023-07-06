@@ -3,7 +3,7 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5.QtCore import QSettings
-from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget, QFileDialog, QListWidget, QListWidgetItem
+from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QVBoxLayout, QWidget, QFileDialog, QListWidget, QListWidgetItem
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget,QHBoxLayout
 from PyQt5.QtGui import QIcon,QColor,QDesktopServices
 from PyQt5.QtCore import QSettings,Qt, QUrl
@@ -22,7 +22,7 @@ class FolderFilter(QWidget):
         self.setWindowIcon(QIcon('./icon.png'))
         # 设置界面
         self.setWindowTitle('FoldersFilter')
-        self.setMinimumSize(512, 512) # 设置最小大小
+        self.setMinimumSize(650, 450) # 设置最小大小
         self.setMaximumSize(1080, 1080) # 设置最大大小
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding) # 设置大小策略
        
@@ -34,20 +34,15 @@ class FolderFilter(QWidget):
         self.move(x, y)
 
         #############创建组件   
-        # 创建标签1
-        self.folder_label = QLabel('待筛选的文件夹：')
-        self.folder_label.setStyleSheet('color: #313131; margin-top: 5px; margin-bottom: 10px;')
-
         #创建按钮
-        button_width1 = 180
+        button_width1 = 187
         button_height1 = 30
-        button_width2 = 90
+        button_width2 = 92
         button_height2 = 30
-        #button_style = 'color: #313131; background-color: white; color: #272727; border-radius: 10px; border: 1px solid #C5C5C5;'
         button_style = """
         QPushButton {
             background-color: white;
-            color: #313131;
+            color: #3B3E41;
             border-radius: 10px;
             border: 1px solid #C5C5C5;
         }
@@ -73,11 +68,15 @@ class FolderFilter(QWidget):
         self.refresh_button.setStyleSheet(button_style)
         self.refresh_button.clicked.connect(self.refresh)
 
+        # 创建标签1
+        self.folder_label = QLabel('已选择的文件夹')
+        self.folder_label.setStyleSheet('color: #3B3E41; margin-top: 5px; margin-bottom: 0px;')
+
         #创建下拉框
-        combo_width = 75
+        combo_width = 85
         combo_height = 30
-        combo_style_1 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:12px;} QComboBox::drop-down {  background-color: #C5C5C5; border: none; }'        
-        combo_style_2 = 'QComboBox { color: #313131; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:12px;} QComboBox::drop-down {  background-color: #C5C5C5; border: none; }'                
+        combo_style_1 = 'QComboBox { color: #3B3E41; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:20px;} QComboBox::drop-down {  background-color: #C5C5C5; border: none; }'        
+        combo_style_2 = 'QComboBox { color: #3B3E41; border: 1px solid #C5C5C5; border-radius: 5px; margin-top: 10px; padding-left:20px;} QComboBox::drop-down {  background-color: #C5C5C5; border: none; }'                
 
         self.filter_combo = QComboBox() # 文件类型选择
         self.filter_combo.setFixedSize(combo_width, combo_height)
@@ -95,22 +94,17 @@ class FolderFilter(QWidget):
         self.sort_combo.activated.connect(self.folders_sort)
 
         #创建标签2
-        label_style_3 = 'color: #313131; margin-top: 10px; margin-bottom: 0px; margin-left: 0px;'
+        label_style_3 = 'color: #3B3E41; margin-top: 10px; margin-bottom: 0px; margin-left: 0px;'
+        label_style_4 = 'color: #3B3E41; margin-top: 10px; margin-bottom: 0px; margin-left: 0px;'
 
-        self.folder_type_label = QLabel('文件类型：')
+        self.folder_type_label = QLabel('文件筛选类型：')
         self.folder_type_label.setStyleSheet(label_style_3)     
-        self.folder_sort_label = QLabel('排序方式：')
-        self.folder_sort_label.setStyleSheet(label_style_3)
-
-        #创建分隔线
-        self.hline = QFrame(self)
-        self.hline.setFrameShape(QFrame.HLine)
-        self.hline.setFrameShadow(QFrame.Sunken)
-        self.hline.setGeometry(0, 125, self.width(), 2)
+        self.folder_sort_label = QLabel('列表排序方式：')
+        self.folder_sort_label.setStyleSheet(label_style_4)
 
         #创建标签3
-        label_style_1 = 'color: #313131; margin-top: 25px; margin-bottom: 0px;'
-        label_style_2 = 'color: #313131; margin-top: 25px; margin-bottom: 0px; margin-left: 0px;color: #B6A338;'
+        label_style_1 = 'color: #3B3E41; margin-top: 0px; margin-bottom: 0px;'
+        label_style_2 = 'color: #3B3E41; margin-top: 0px; margin-bottom: 0px; margin-left: 0px;color: #B6A338;'
 
         self.folder_left_label = QLabel('不含')
         self.folder_left_label.setStyleSheet(label_style_1)
@@ -128,6 +122,8 @@ class FolderFilter(QWidget):
         self.file_left_list.setStyleSheet(list_style)
         self.file_right_list = QListWidget()
         self.file_right_list.setStyleSheet(list_style)
+        self.file_filter_folders_list = QListWidget()
+        self.file_filter_folders_list.setStyleSheet(list_style)
 
         #创建进度条
         self.progress_bar = QProgressBar()
@@ -138,39 +134,77 @@ class FolderFilter(QWidget):
         self.progress_bar.setStyleSheet("QProgressBar {color: transparent;border: 1px solid #F0F0F0 ;border-radius: 4px;text-align: center;} QProgressBar::chunk {background-color: #51B163;border-radius: 2px;}")
         self.progress_bar.setFixedHeight(10) # 设置进度条的高度
 
-        ###############创建水平布局管理器
-        hbox1 = QHBoxLayout()
-        hbox2 = QHBoxLayout()
-        hbox3 = QHBoxLayout()
-        hbox4 = QHBoxLayout()
+        # 创建水平布局管理器
+        hbox1_left_container = QWidget()
+        hbox1_left = QHBoxLayout(hbox1_left_container)
+        hbox1_left.addWidget(self.folder_button)
+        hbox2_left_container = QWidget()
+        hbox2_left = QHBoxLayout(hbox2_left_container)
+        hbox2_left.addWidget(self.reset_button)
+        hbox2_left.addWidget(self.refresh_button)
+        hbox3_left = QHBoxLayout()
+        hbox3_left.addSpacing(8) # 添加（）像素的空白占位
+        hbox3_left.addWidget(self.folder_label)
+        hbox4_left = QHBoxLayout() # 筛选的文件夹显示框
+        hbox4_left.addSpacing(11) # 添加（）像素的空白占位
+        hbox4_left.addWidget(self.file_filter_folders_list)
+        hbox4_left.addSpacing(7) # 添加（）像素的空白占位
+        hbox5_left = QHBoxLayout()
+        hbox5_left.addSpacing(8) # 添加（）像素的空白占位
+        hbox5_left.addWidget(self.folder_type_label)
+        hbox5_left.addWidget(self.filter_combo)
+        hbox5_left.addSpacing(10) # 添加（）像素的空白占位
+        hbox6_left = QHBoxLayout()
+        hbox6_left.addSpacing(8) # 添加（）像素的空白占位
+        hbox6_left.addWidget(self.folder_sort_label)
+        hbox6_left.addWidget(self.sort_combo)
+        hbox6_left.addSpacing(10) # 添加（）像素的空白占位
+        hbox1_right = QHBoxLayout()
+        hbox1_right.addWidget(self.folder_left_label)
+        hbox1_right.addWidget(self.folder_left_num_label)
+        hbox1_right.addWidget(self.folder_right_label)
+        hbox1_right.addWidget(self.folder_right_num_label)
+        hbox2_right = QHBoxLayout()
+        hbox2_right.addWidget(self.file_left_list)
+        hbox2_right.addWidget(self.file_right_list)
+        hbox3_right = QHBoxLayout()
+        hbox3_right.addWidget(self.progress_bar)
 
-        # 添加组件水平布局管理器中
-        hbox1.addWidget(self.folder_button)
-        hbox1.addWidget(self.reset_button)
-        hbox1.addWidget(self.refresh_button)
-        hbox2.addWidget(self.file_left_list)
-        hbox2.addWidget(self.file_right_list)
-        hbox3.addWidget(self.folder_left_label)
-        hbox3.addWidget(self.folder_left_num_label)
-        hbox3.addWidget(self.folder_right_label)
-        hbox3.addWidget(self.folder_right_num_label)
-        hbox4.addSpacing(0) # 添加（）像素的空白占位
-        hbox4.addWidget(self.folder_type_label)
-        hbox4.addWidget(self.filter_combo)
-        hbox4.addSpacing(35) # 添加（）像素的空白占位
-        hbox4.addWidget(self.folder_sort_label)
-        hbox4.addWidget(self.sort_combo)
-        hbox4.addSpacing(35) # 添加（）像素的空白占位
-        
-        ############将组件添加到主窗口中
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self.folder_label)
-        main_layout.addLayout(hbox1)
-        main_layout.addLayout(hbox4)
-        main_layout.addLayout(hbox3)
-        main_layout.addLayout(hbox2)
-        main_layout.addWidget(self.progress_bar)        
+        # 创建大垂直布局管理器
+        vbox1 = QVBoxLayout()
+        vbox1.addSpacing(25) # 添加（）像素的空白占位
+        vbox1.addWidget(hbox1_left_container)
+        vbox1.addWidget(hbox2_left_container)
+        vbox1.addSpacing(15) # 添加（）像素的空白占位
+        vbox1.addLayout(hbox3_left)
+        vbox1.addLayout(hbox4_left)
+        vbox1.addSpacing(15) # 添加（）像素的空白占位
+        vbox1.addLayout(hbox5_left)
+        vbox1.addLayout(hbox6_left)
+        vbox1.addSpacing(40) # 添加（）像素的空白占位
+        vbox2 = QVBoxLayout()
+        vbox2.addLayout(hbox1_right)
+        vbox2.addLayout(hbox2_right)
+        vbox2.addLayout(hbox3_right)
+
+        # 将组件添加到主窗口中
+        main_layout = QHBoxLayout()
+        vbox1_widget = QWidget()
+        vbox1_widget.setLayout(vbox1)
+        vbox1_widget.setFixedWidth(220) 
+        main_layout.addWidget(vbox1_widget)
+        main_layout.addSpacing(5) # 添加（）像素的空白占位
+        main_layout.addSpacing(5) # 添加（）像素的空白占位
+        main_layout.addLayout(vbox2)     
         self.setLayout(main_layout)
+
+        # 创建垂直分隔线
+        self.vline = QFrame(self)
+        self.vline.setFrameShape(QFrame.VLine)
+        self.vline.setFrameShadow(QFrame.Plain)
+        self.x = 230  # 设置垂直分隔线的位置
+        self.vline.setGeometry(x, 0, 1, self.height())
+        self.vline.setStyleSheet("border: 1px solid #C5C5C5;")
 
         ###########设置默认项
         self.settings = QSettings("lemon-o", "FoldersFilter")
@@ -188,30 +222,24 @@ class FolderFilter(QWidget):
         self.parent_dir = None
         self.dir_path = None
         self.file_type = ""
-        self.refresh_flag = False 
+        self.refresh_flag = True 
 
-    #设置分隔线   
+    # 设置垂直分隔线
     def resizeEvent(self, event):
-        # 获取新的窗口宽度
+        # 获取新的窗口宽度和高度
         new_width = event.size().width()
-        # 将水平分隔线宽度设置为新的窗口宽度
-        self.hline.setGeometry(0, 125, new_width, 2)
-            
+        new_height = event.size().height()
+        # 将垂直分隔线位置和大小设置为新的窗口宽度和高度
+        self.vline.setGeometry(self.x, 0, 1, new_height)
+
     #############主程序
     #选择文件夹
     def select_folder(self):
-        if self.file_left_list.count() > 0 or self.file_right_list.count() > 0:
-            msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Information) 
-            msg_box.setWindowTitle("提示")
-            msg_box.setText("未清空列表会使筛选结果叠加，是否继续？")
-            yes_button = msg_box.addButton("继续", QMessageBox.YesRole)
-            cancel_button = msg_box.addButton("取消", QMessageBox.NoRole)
-            msg_box.setDefaultButton(cancel_button)
-            msg_box.exec_()
-            if msg_box.clickedButton() == cancel_button:
-                return
-
+        self.refresh_flag = True
+        self.file_left_list.clear()
+        self.file_right_list.clear()
+        self.folder_left_num_label.clear()
+        self.folder_right_num_label.clear()
         # 获取用户输入的文件类型
         file_type = self.filter_combo.currentText()        
         if not file_type:
@@ -232,98 +260,105 @@ class FolderFilter(QWidget):
             else:
                 self.settings.setValue("last_dir_path", dir_path)
             # 设置已选择的文件夹路径
-            self.folder_label.setText('待筛选的文件夹：{}'.format(dir_path))   
-            self.parent_dir = os.path.basename(dir_path)
-            self.dir_path = dir_path
-
+            item = QListWidgetItem()
+            item.setData(Qt.DisplayRole, os.path.basename(dir_path))
+            item.setData(Qt.TextColorRole, QColor("#761B73")) # 设置链接的颜色
+            item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
+            item.setData(Qt.UserRole, dir_path)
+            self.file_filter_folders_list.addItem(item)
+            # 连接双击事件到槽函数
+            self.file_filter_folders_list.itemDoubleClicked.connect(lambda: self.item_double_clicked(self.file_filter_folders_list))   
             self.folders_filter()
-  
-        # 文件类型筛选      
+    
+    # 文件类型筛选      
     def folders_filter(self):
-        if not self.parent_dir or not self.dir_path:
+        if self.file_filter_folders_list.count() == 0:
             return
         #获取选择的文件类型
         file_type = self.filter_combo.currentText()
         left_count = 0  # 不含有此类文件的子文件夹数量
         right_count = 0  # 含有此类文件的子文件夹数量
         # 统计文件夹数量
-        total_count = len([name for name in os.listdir(self.dir_path) if os.path.isdir(os.path.join(self.dir_path, name))])
+        total_count = 0
         processed_count = 0
 
-        for root, dirs, files in os.walk(self.dir_path):
-            # 处理不可访问的目录
-            if not os.access(root, os.R_OK):
-                continue
-            # 继续处理其他的目录 
-            for dir_name in dirs:              
-                # 子文件夹的路径
-                sub_dir_path = os.path.join(root, dir_name)
-                # 如果该子文件夹是目录A的一级子文件夹，则添加到控件中
-                if os.path.dirname(sub_dir_path) == self.dir_path:
-                    # 检查子文件夹及其所有子文件夹中是否存在.file_type文件
-                    file_type_exist = False
-                    for sub_root, sub_dirs, sub_files in os.walk(sub_dir_path):
-                        if any(f.endswith(file_type) for f in sub_files):
-                            file_type_exist = True
-                            break
+        for i in range(self.file_filter_folders_list.count()): 
+            item = self.file_filter_folders_list.item(i)
+            self.parent_dir = item.data(Qt.DisplayRole)
+            self.dir_path = item.data(Qt.UserRole)   
+            for root, dirs, files in os.walk(self.dir_path):
+                total_count += len(dirs)
+                # 处理不可访问的目录
+                if not os.access(root, os.R_OK):
+                    continue
+                # 继续处理其他的目录 
+                for dir_name in dirs:              
+                    # 子文件夹的路径
+                    sub_dir_path = os.path.join(root, dir_name)
+                    # 如果该子文件夹是目录A的一级子文件夹，则添加到控件中
+                    if os.path.dirname(sub_dir_path) == self.dir_path:
+                        # 检查子文件夹及其所有子文件夹中是否存在.file_type文件
+                        file_type_exist = False
+                        for sub_root, sub_dirs, sub_files in os.walk(sub_dir_path):
+                            if any(f.endswith(file_type) for f in sub_files):
+                                file_type_exist = True
+                                break
 
-                    if not file_type_exist:
-                        if os.path.exists(os.path.join(self.parent_dir, sub_dir_path, "待修")):
-                            sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path, "待修"))
-                            if not any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
-                                dir_name = "未选图 " + dir_name
-                        elif os.path.exists(os.path.join(self.parent_dir, sub_dir_path)):
-                            sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
-                            for file in sub_dir_files:
-                                if file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')):
-                                    file_path = os.path.join(self.parent_dir, sub_dir_path, file)
-                                    with Image.open(file_path) as img:
-                                        if img.size == (3200, 4800) or img.size == (4800, 3200):
-                                            dir_name = "未选图 " + dir_name
-                                            break
-                        # 创建一个QListWidgetItem对象
-                        item = QListWidgetItem()
-                        # 给item设置数据，包括名称和HTML链接
-                        item.setData(Qt.DisplayRole, dir_name)
-                        item.setData(Qt.TextColorRole, QColor("#2F857E")) # 设置链接的颜色
-                        item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
-                        item.setData(Qt.UserRole, os.path.join(self.parent_dir, sub_dir_path)) 
-                        self.file_left_list.addItem(item)
-                        left_count += 1
+                        if not file_type_exist:
+                            if os.path.exists(os.path.join(self.parent_dir, sub_dir_path, "待修")):
+                                sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path, "待修"))
+                                if not any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
+                                    dir_name = "未选图 " + dir_name
+                            elif os.path.exists(os.path.join(self.parent_dir, sub_dir_path)):
+                                sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
+                                for file in sub_dir_files:
+                                    if file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')):
+                                        file_path = os.path.join(self.parent_dir, sub_dir_path, file)
+                                        with Image.open(file_path) as img:
+                                            if img.size == (3200, 4800) or img.size == (4800, 3200):
+                                                dir_name = "未选图 " + dir_name
+                                                break
+                            # 创建一个QListWidgetItem对象
+                            item = QListWidgetItem()
+                            # 给item设置数据，包括名称和HTML链接
+                            item.setData(Qt.DisplayRole, dir_name)
+                            item.setData(Qt.TextColorRole, QColor("#2F857E")) # 设置链接的颜色
+                            item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
+                            item.setData(Qt.UserRole, os.path.join(self.parent_dir, sub_dir_path)) 
+                            self.file_left_list.addItem(item)
+                            left_count += 1
 
-                    if file_type_exist:
-                        item = QListWidgetItem()
-                        # 给item设置数据，包括名称和HTML链接
-                        item.setData(Qt.DisplayRole, dir_name)
-                        item.setData(Qt.TextColorRole, QColor("#39569E")) # 设置链接的颜色
-                        item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
-                        item.setData(Qt.UserRole, os.path.join(self.parent_dir, sub_dir_path))
-                        self.file_right_list.addItem(item)
-                        right_count += 1
-                    
-                    option = self.sort_combo.currentText()
+                        if file_type_exist:
+                            item = QListWidgetItem()
+                            # 给item设置数据，包括名称和HTML链接
+                            item.setData(Qt.DisplayRole, dir_name)
+                            item.setData(Qt.TextColorRole, QColor("#39569E")) # 设置链接的颜色
+                            item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
+                            item.setData(Qt.UserRole, os.path.join(self.parent_dir, sub_dir_path))
+                            self.file_right_list.addItem(item)
+                            right_count += 1
                         
-                    if option == "升序":
-                        self.file_right_list.sortItems()
-                        self.file_left_list.sortItems()
+                        option = self.sort_combo.currentText()
                             
-                    elif option == "降序":
-                        self.file_right_list.sortItems(Qt.DescendingOrder)
-                        self.file_left_list.sortItems(Qt.DescendingOrder)
-                            
-                    self.file_right_list.update()
-                    self.file_left_list.update()                     
+                        if option == "升序":
+                            self.file_right_list.sortItems()
+                            self.file_left_list.sortItems()
+                                
+                        elif option == "降序":
+                            self.file_right_list.sortItems(Qt.DescendingOrder)
+                            self.file_left_list.sortItems(Qt.DescendingOrder)
+                                
+                        self.file_right_list.update()
+                        self.file_left_list.update()                     
+                        
+                        self.folder_left_num_label.setText(f"总计：{self.file_left_list.count()}")
+                        self.folder_right_num_label.setText(f"总计：{self.file_right_list.count()}")
                     
-                    self.folder_left_num_label.setText(f"总计：{self.file_left_list.count()}")
-                    self.folder_right_num_label.setText(f"总计：{self.file_right_list.count()}")
-                
-                processed_count += 1
-                progress_percent = int(processed_count / total_count * 100)
-                self.progress_bar.setValue(progress_percent)
+                    processed_count += 1
+                    progress_percent = int(processed_count / total_count * 100)
+                    self.progress_bar.setValue(progress_percent)   
 
-        # 如果点击刷新按钮refresh_flag为True,则不显示任何提示
-        if self.refresh_flag:
-            self.refresh_flag = False
+        if self.refresh_flag == False:
             QMessageBox.information(self, "提示","列表已成功刷新!")
         else:                          
             # 根据符合条件和不符合条件的子文件夹数量，弹出对应的提示框
@@ -335,23 +370,22 @@ class FolderFilter(QWidget):
                 QMessageBox.information(self, "提示", "筛选完成！有{}个文件夹含有此类文件。".format(right_count))
             else:
                 QMessageBox.information(self, "提示", "没有符合条件的文件夹。")
+                    
+            # 连接双击事件到槽函数
+            self.file_left_list.itemDoubleClicked.connect(lambda: self.item_double_clicked(self.file_left_list))
+            self.file_right_list.itemDoubleClicked.connect(lambda: self.item_double_clicked(self.file_right_list))
             
+    def item_double_clicked(self, list_widget):
+        # 获取双击的item
+        item = list_widget.currentItem()
+        if item is not None:
+            # 获取文件夹路径
+            folder_path = item.data(Qt.UserRole)
+            # url编码
+            encoded_path = urllib.parse.quote(folder_path)
+            # 打开文件夹
+            QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 
-        def item_double_clicked(list_widget):
-            # 获取双击的item
-            item = list_widget.currentItem()
-            if item is not None:
-                # 获取文件夹路径
-                folder_path = item.data(Qt.UserRole)
-                #url编码
-                encoded_path = urllib.parse.quote(folder_path) 
-                # 打开文件夹
-                QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
-
-        # 连接双击事件到槽函数
-        self.file_left_list.itemDoubleClicked.connect(lambda: item_double_clicked(self.file_left_list))
-        self.file_right_list.itemDoubleClicked.connect(lambda: item_double_clicked(self.file_right_list))       
-    
     # 进行排序      
     def folders_sort(self):  
         option = self.sort_combo.currentText()
@@ -368,25 +402,24 @@ class FolderFilter(QWidget):
         self.file_left_list.update()       
              
         
-    #重置按钮配置
+    #清空按钮配置
     def reset(self):
-        if not self.parent_dir or not self.dir_path:
+        if self.file_filter_folders_list.count() == 0:
             if self.file_left_list.count() == 0 or self.file_right_list.count() == 0:
                 QMessageBox.information(self,'提示','请先选择文件夹')
                 return
-        elif self.parent_dir or self.dir_path:
-            if self.file_left_list.count() == 0 and self.file_right_list.count() == 0:
-                QMessageBox.information(self,'提示','列表中没有内容')
-                return           
+        self.parent_dir = None
+        self.dir_path = None
         self.file_left_list.clear()
         self.file_right_list.clear()
+        self.file_filter_folders_list.clear()
         self.folder_left_num_label.clear()
         self.folder_right_num_label.clear()
         self.progress_bar.setValue(0)
 
     #刷新按钮配置
     def refresh(self):
-        if not self.parent_dir or not self.dir_path:
+        if self.file_filter_folders_list.count() == 0:
             if self.file_left_list.count() == 0 or self.file_right_list.count() == 0:
                 QMessageBox.information(self,'提示','请先选择文件夹')
                 return
@@ -394,9 +427,8 @@ class FolderFilter(QWidget):
         self.file_right_list.clear()
         self.folder_left_num_label.clear()
         self.folder_right_num_label.clear()
-
         #设置刷新标记,进入folders_filter()函数后立刻复位    
-        self.refresh_flag = True 
+        self.refresh_flag = False 
         self.folders_filter()
 
     #加载窗口大小
