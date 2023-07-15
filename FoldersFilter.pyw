@@ -235,11 +235,8 @@ class FolderFilter(QWidget):
     #############主程序
     #选择文件夹
     def select_folder(self):
+        self.clear_list_flag = True
         self.refresh_flag = True
-        self.file_left_list.clear()
-        self.file_right_list.clear()
-        self.folder_left_num_label.clear()
-        self.folder_right_num_label.clear()
         # 获取用户输入的文件类型
         file_type = self.filter_combo.currentText()        
         if not file_type:
@@ -253,23 +250,31 @@ class FolderFilter(QWidget):
             last_dir_path = self.settings.value("last_dir_path", ".")
             if not last_dir_path:  # 如果还没有保存过选择的文件夹路径，则使用当前目录作为默认路径
                 last_dir_path = "."
-            dir_path = str(QFileDialog.getExistingDirectory(self, '选择文件夹', last_dir_path)) 
+            dir_path = str(QFileDialog.getExistingDirectory(self, '选择文件夹', last_dir_path))
             if not dir_path:
-                QMessageBox.information(self, '提示', '未选择文件夹')
-                return  # 如果未选择文件夹则直接返回
-            else:
+                self.clear_list_flag = False
+            if dir_path in [self.file_filter_folders_list.item(index).data(Qt.UserRole) for index in range(self.file_filter_folders_list.count())]:
+                QMessageBox.information(self, "提示", "此文件夹已在列表中。")
+                self.clear_list_flag = False
+            if self.clear_list_flag == False:
+                return
+            if self.clear_list_flag == True:
+                self.file_left_list.clear()
+                self.file_right_list.clear()
+                self.folder_left_num_label.clear()
+                self.folder_right_num_label.clear()
                 self.settings.setValue("last_dir_path", dir_path)
-            # 设置已选择的文件夹路径
-            item = QListWidgetItem()
-            item.setData(Qt.DisplayRole, os.path.basename(dir_path))
-            item.setData(Qt.TextColorRole, QColor("#761B73")) # 设置链接的颜色
-            item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
-            item.setData(Qt.UserRole, dir_path)
-            self.file_filter_folders_list.addItem(item)
+                # 设置已选择的文件夹路径
+                item = QListWidgetItem()
+                item.setData(Qt.DisplayRole, os.path.basename(dir_path))
+                item.setData(Qt.TextColorRole, QColor("#761B73")) # 设置链接的颜色
+                item.setData(Qt.TextAlignmentRole, Qt.AlignLeft)   # 设置链接的对齐方式
+                item.setData(Qt.UserRole, dir_path)
+                self.file_filter_folders_list.addItem(item)
             # 连接双击事件到槽函数
             self.file_filter_folders_list.itemDoubleClicked.connect(lambda: self.item_double_clicked(self.file_filter_folders_list))   
             self.folders_filter()
-    
+
     # 文件类型筛选      
     def folders_filter(self):
         if self.file_filter_folders_list.count() == 0:
@@ -369,7 +374,7 @@ class FolderFilter(QWidget):
             elif right_count > 0:
                 QMessageBox.information(self, "提示", "筛选完成！有{}个文件夹含有此类文件。".format(right_count))
             else:
-                QMessageBox.information(self, "提示", "没有符合条件的文件夹。")
+                QMessageBox.information(self, "提示", "没有符合筛选条件的文件夹。")
                     
             # 连接双击事件到槽函数
             self.file_left_list.itemDoubleClicked.connect(lambda: self.item_double_clicked(self.file_left_list))
