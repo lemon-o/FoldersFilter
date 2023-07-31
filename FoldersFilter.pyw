@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -310,19 +311,31 @@ class FolderFilter(QWidget):
                                 break
 
                         if not file_type_exist:
-                            if os.path.exists(os.path.join(self.parent_dir, sub_dir_path, "待修")):
-                                sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path, "待修"))
-                                if not any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
-                                    dir_name = "未选图 " + dir_name
-                            elif os.path.exists(os.path.join(self.parent_dir, sub_dir_path)):
+                            flag_img = True
+                            if os.path.isdir(os.path.join(self.parent_dir, sub_dir_path)):
+                                sub_dirs = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
+                                for sub_dir in sub_dirs:
+                                    full_sub_dir = os.path.join(self.parent_dir, sub_dir_path, sub_dir)
+                                    if os.path.isdir(full_sub_dir):
+                                        sub_dir_files = os.listdir(full_sub_dir)  
+                                        if any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
+                                            flag_img = False  
+                                            break       
                                 sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
                                 for file in sub_dir_files:
                                     if file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')):
                                         file_path = os.path.join(self.parent_dir, sub_dir_path, file)
                                         with Image.open(file_path) as img:
-                                            if img.size == (3200, 4800) or img.size == (4800, 3200):
-                                                dir_name = "未选图 " + dir_name
+                                            filename = os.path.basename(img.filename)
+                                            if re.search(u'[\u4e00-\u9fa5]', filename):
+                                                flag_img = False
+                                                break   
+                                            elif img.size[0] < 3000 or img.size[1] < 3000:
+                                                flag_img = False
                                                 break
+                            if flag_img == True:
+                                dir_name = "未选图 " + dir_name
+
                             # 创建一个QListWidgetItem对象
                             item = QListWidgetItem()
                             # 给item设置数据，包括名称和HTML链接
