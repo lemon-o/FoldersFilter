@@ -322,17 +322,19 @@ class FolderFilter(QWidget):
                                             flag_img = False  
                                             break       
                                 sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
-                                for file in sub_dir_files:
-                                    if file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')):
-                                        file_path = os.path.join(self.parent_dir, sub_dir_path, file)
-                                        with Image.open(file_path) as img:
-                                            filename = os.path.basename(img.filename)
-                                            if re.search(u'[\u4e00-\u9fa5]', filename):
-                                                flag_img = False
-                                                break   
-                                            elif img.size[0] < 3000 or img.size[1] < 3000:
-                                                flag_img = False
-                                                break
+                                if flag_img == True:
+                                    for file in sub_dir_files:
+                                        if file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')):
+                                            file_path = os.path.join(self.parent_dir, sub_dir_path, file)
+                                            with Image.open(file_path) as img:
+                                                filename = os.path.basename(img.filename)
+                                                if img.size[0] < 3000 or img.size[1] < 3000:
+                                                    flag_img = False
+                                                    break
+                                                elif re.search(u'[\u4e00-\u9fa5]', filename):
+                                                    flag_img = False
+                                                    break   
+
                             if flag_img == True:
                                 dir_name = "未选图 " + dir_name
 
