@@ -12,6 +12,8 @@ import urllib.parse
 from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QComboBox, QFrame
 from PIL import Image
+import concurrent.futures
+
 
 class FolderFilter(QWidget):
 
@@ -321,21 +323,23 @@ class FolderFilter(QWidget):
                                         if any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
                                             flag_img = False  
                                             break       
-                                sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
                                 if flag_img == True:
-                                    flag_img = False
-                                    for file in sub_dir_files:
-                                        if file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')):
-                                            file_path = os.path.join(self.parent_dir, sub_dir_path, file)
+                                    flag_img = False #当文件夹没有任何图片文件时设置为fasle
+                                    sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
+                                    img_files = [f for f in sub_dir_files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif'))]
+                                    chinese_pattern = re.compile(u'[\u4e00-\u9fa5]')
+                                    last_file = img_files[-1]
+                                    if chinese_pattern.search(last_file):
+                                        flag_img = False
+                                    else:
+                                        for img_file in img_files:  
+                                            file_path = os.path.join(self.parent_dir, sub_dir_path, img_file)
                                             with Image.open(file_path) as img:
-                                                filename = os.path.basename(img.filename)
                                                 if img.size[0] > 3000 or img.size[1] > 3000:
                                                     flag_img = True
+                                                else:
+                                                    flag_img = False
                                                     break
-                                                elif not re.search(u'[\u4e00-\u9fa5]', filename):
-                                                    flag_img = True
-                                                    break   
-
                             if flag_img == True:
                                 dir_name = "未选图 " + dir_name
 
