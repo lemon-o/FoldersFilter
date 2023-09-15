@@ -320,7 +320,7 @@ class FolderFilter(QWidget):
                                     full_sub_dir = os.path.join(self.parent_dir, sub_dir_path, sub_dir)
                                     if os.path.isdir(full_sub_dir):
                                         sub_dir_files = os.listdir(full_sub_dir)  
-                                        if any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif')) for file in sub_dir_files):
+                                        if any(file.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif','.mp4')) for file in sub_dir_files):
                                             flag_img = False  
                                             break       
                                 if flag_img == True:
@@ -328,18 +328,20 @@ class FolderFilter(QWidget):
                                     sub_dir_files = os.listdir(os.path.join(self.parent_dir, sub_dir_path))
                                     img_files = [f for f in sub_dir_files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.raw','.bmp', '.gif'))]
                                     chinese_pattern = re.compile(u'[\u4e00-\u9fa5]')
-                                    last_file = img_files[-1]
-                                    if chinese_pattern.search(last_file):
-                                        flag_img = False
-                                    else:
-                                        for img_file in img_files:  
-                                            file_path = os.path.join(self.parent_dir, sub_dir_path, img_file)
-                                            with Image.open(file_path) as img:
+                                    if img_files:
+                                        last_file = img_files[-1]
+                                        print(last_file)
+                                        if chinese_pattern.search(last_file):
+                                            flag_img = False
+                                        else:
+                                            img_path = os.path.join(self.parent_dir, sub_dir_path, last_file)
+                                            with Image.open(img_path) as img:
                                                 if img.size[0] > 3000 or img.size[1] > 3000:
                                                     flag_img = True
                                                 else:
                                                     flag_img = False
-                                                    break
+                                    else:
+                                        print("No image files found")                                       
                             if flag_img == True:
                                 dir_name = "未选图 " + dir_name
 
